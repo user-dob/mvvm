@@ -1,7 +1,8 @@
 'use strict'
 
 let _attr = {};
-let _methods = {};
+let _enumAttr = {};
+let _expressions = {};
 
 function map(path, call) {
 	_map[path] = _map[path] || []
@@ -24,7 +25,7 @@ function observer() {
 			`Object.defineProperty(${path}, '${prop}', {`,
 				`set(value) {`,
 					`_${name} = value`,
-					`_map['${i}'].forEach(function(f) { f.call($this, value) })`,
+					`_map['${i}'].forEach(f => { f.call($this, value) })`,
 				`},`,
 				`get() {`,
 					`return _${name}`,
@@ -48,8 +49,12 @@ class Tpl {
         _attr[`data-${name}`] = callback
     }
 
-    static addMethod(name, callback) {
-        _methods[`data-${name}`] = callback
+    static addEnumAttr(name, callback, change) {
+        _enumAttr[`data-${name}`] = {callback: callback, change: change}
+    }
+
+    static addExpression(name, callback) {
+        _expressions[`data-${name}`] = callback
     }
 
     static bindFrag(frag, viewModel) {
@@ -101,11 +106,24 @@ class Tpl {
                 args.values.push(el.ownerElement)
             }
 
-            let callMethod = _methods[el.nodeName]
-            if(callMethod) {
+            let callExpression = _expressions[el.nodeName]
+            if(callExpression) {
                 body.push(
-                    `let m_${i}=${callMethod.toString()}`,
-                    `m_${i}(el_${i}, "${el.nodeValue}", $this, expression)`
+                    `let ex_${i}=${callExpression.toString()}`,
+                    `ex_${i}(el_${i}, "${el.nodeValue}", $this, expression)`
+                )
+
+                args.names.push(`el_${i}`)
+                args.values.push(el.ownerElement)
+            }
+
+            let callEnumAttr = _enumAttr[el.nodeName]
+            if(callEnumAttr) {
+                body.push(
+                    `let en_${i}=${callEnumAttr.callback.toString()}`,
+                    `let en_c_${i}=${callEnumAttr.change.toString()}`,
+                    `en_${i}(el_${i}, ${el.nodeValue}, $this, expression)`,
+                    `Array.observe(${el.nodeValue}, changes => { en_c_${i}(el_${i}, changes) })`
                 )
 
                 args.names.push(`el_${i}`)

@@ -2,49 +2,17 @@
 
 let el = document.getElementById('app')
 
-Tpl.addAttr('text', function(el, value) {
-    el.textContent = value
-})
-
-Tpl.addAttr('for', function(el, items) {
-    let frag = document.createDocumentFragment();
-
-    for(let item of items) {
-        let clone = document.importNode(el.content, true);
-
-        Tpl.bindFrag(clone, item)
-
-        frag.appendChild(clone)
-    }
-
-    el.parentNode.replaceChild(frag, el)
-})
-
-Tpl.addAttr('if', function(el, value, viewModel) {
-    if(value) {
-        let frag = document.createDocumentFragment();
-        let clone = document.importNode(el.content, true);
-
-        Tpl.bindFrag(clone, viewModel)
-
-        frag.appendChild(clone)
-
-        el.parentNode.replaceChild(frag, el)
-    }
-})
-
-Tpl.addMethod('click', function(el, value, viewModel, expression) {
-    el.addEventListener('click', function() {
-        expression(value)
-    })
-})
-
-
-
 let viewModel = {
     title: 'Title',
     click(name) {
-        console.log(name)
+        viewModel.users.push(
+            {
+                name: 'name 1',
+                posts: {
+                    titles: [{title: 'text 1'}, {title: 'text 2'}, {title: 'text 3'}]
+                }
+            }
+        )
     },
     user: {
         name: 'user 1',
@@ -80,7 +48,6 @@ let viewModel = {
 }
 
 Tpl.bind(el, viewModel)
-
 
 setTimeout(function() {
     viewModel.user.name = 'new Title'
