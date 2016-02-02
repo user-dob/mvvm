@@ -58,11 +58,16 @@ class Tpl {
     }
 
     static bindFrag(frag, viewModel) {
-        let i = frag.children.length;
+        let i = frag.children.length,
+			child, children = []
 
         while (i--) {
-            Tpl.bind(frag.children[i], viewModel);
+			child = frag.children[i]
+            Tpl.bind(child, viewModel);
+			children.push(child)
         }
+		
+		return children;
     }
 
     static bind(dom, viewModel) {
@@ -122,8 +127,8 @@ class Tpl {
                 body.push(
                     `let en_${i}=${callEnumAttr.callback.toString()}`,
                     `let en_c_${i}=${callEnumAttr.change.toString()}`,
-                    `en_${i}(el_${i}, ${el.nodeValue}, $this, expression)`,
-                    `Array.observe(${el.nodeValue}, changes => { en_c_${i}(el_${i}, changes) })`
+                    `let c_${i} = en_${i}(el_${i}, ${el.nodeValue}, $this, expression)`,
+                    `Array.observe(${el.nodeValue}, changes => { en_c_${i}(el_${i}, changes, c_${i}) })`
                 )
 
                 args.names.push(`el_${i}`)

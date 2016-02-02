@@ -5,21 +5,28 @@ Tpl.addAttr('text', function(el, value) {
 })
 
 Tpl.addEnumAttr('for', function(el, items) {
-    let frag = document.createDocumentFragment();
+    let frag = document.createDocumentFragment(),
+		child, children = [];
 
     for(let item of items) {
         let clone = document.importNode(el.content, true);
 
-        Tpl.bindFrag(clone, item)
+        child = Tpl.bindFrag(clone, item)
+		children.push(child)
 
         frag.appendChild(clone)
     }
 
     el.parentNode.replaceChild(frag, el)
-}, function(el, changes) {
+	
+	return children
+	
+}, function(el, changes, children) {
 
     changes.forEach(change => {
         if(change.type == 'splice') {
+			
+			children[0][0].appendChild(document.createElement('div'))
 
         }
     })
