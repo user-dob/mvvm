@@ -59,13 +59,13 @@ class Tpl {
 
     static bindFrag(frag, viewModel) {
         let i = frag.children.length,
-			child, children = []
-
-        while (i--) {
+			child, children = [];
+			
+		for(let i=0, length=frag.children.length; i<length; i++) {
 			child = frag.children[i]
-            Tpl.bind(child, viewModel);
+            Tpl.bind(child, viewModel)
 			children.push(child)
-        }
+		} 	 
 		
 		return children;
     }

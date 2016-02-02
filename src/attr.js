@@ -26,12 +26,22 @@ Tpl.addEnumAttr('for', function(el, items) {
     changes.forEach(change => {
         if(change.type == 'splice') {
 			
-			children[0][0].appendChild(document.createElement('div'))
+			let clone = document.importNode(el.content, true)
+			let item = change.object[change.index];
+			
+			let child = Tpl.bindFrag(clone, item)
+			
+			if(change.index == change.object.length) {
+								
+			} else {
+				let foo = children[change.index][0]
+				foo.parentNode.insertBefore(clone, foo)
+				
+				children.unshift(child)
+			}
 
         }
     })
-
-    console.log(el, changes)
 })
 
 Tpl.addAttr('if', function(el, value, viewModel) {
