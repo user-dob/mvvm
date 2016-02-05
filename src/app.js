@@ -4,8 +4,8 @@ let el = document.getElementById('app')
 
 let viewModel = {
     title: 'Title',
-    click(name) {
-        viewModel.users.unshift(
+    add(name) {
+        viewModel.users.push(
             {
                 name: Math.random(),
                 posts: {
@@ -13,6 +13,9 @@ let viewModel = {
                 }
             }
         )
+    },
+    remove(name) {
+        viewModel.title += '!'
     },
     user: {
         name: 'user 1',

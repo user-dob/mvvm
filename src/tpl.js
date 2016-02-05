@@ -2,7 +2,13 @@
 
 let _attr = {};
 let _enumAttr = {};
-let _expressions = {};
+let _expressionAttr = {};
+
+const types = new Map([
+    ['attr', _attr],
+    ['enum', _enumAttr],
+    ['expression', _expressionAttr]
+])
 
 function map(path, call) {
 	_map[path] = _map[path] || []
@@ -13,6 +19,9 @@ function observer() {
 	let body = []
 
 	for(let i in _map) {
+
+        if(i.startsWith('$model')) continue;
+
 		let path = i
 		let name = path.replace(/\./g, '_')
 		path = `$this.${path}`.split('.');
@@ -35,6 +44,7 @@ function observer() {
 	}
 
 	let f = new Function('$this', '_map', body.join('\n'))
+
 	f($this, _map)
 }
 
@@ -45,32 +55,32 @@ function expression(code) {
 
 class Tpl {
 
-    static addAttr(name, callback) {
-        _attr[`data-${name}`] = callback
+    static addAttr(name, init, change) {
+        _attr[`data-${name}`] = {init: init, change: change || init}
     }
 
-    static addEnumAttr(name, callback, change) {
-        _enumAttr[`data-${name}`] = {callback: callback, change: change}
+    static addEnumAttr(name, init, change) {
+        _enumAttr[`data-${name}`] = {init: init, change: change || init}
     }
 
-    static addExpression(name, callback) {
-        _expressions[`data-${name}`] = callback
+    static addExpressionAttr(name, init, change) {
+        _expressionAttr[`data-${name}`] = {init: init, change: change || init}
     }
 
-    static bindFrag(frag, viewModel) {
+    static bindFrag(frag, $this, $model) {
         let i = frag.children.length,
 			child, children = [];
 			
 		for(let i=0, length=frag.children.length; i<length; i++) {
 			child = frag.children[i]
-            Tpl.bind(child, viewModel)
+            Tpl.bind(child, $this, $model)
 			children.push(child)
 		} 	 
 		
 		return children;
     }
 
-    static bind(dom, viewModel) {
+    static bind(dom, viewModel, $model=viewModel) {
         let nodesSnapshot,
             i, el, args,
             body = [];
@@ -79,13 +89,14 @@ class Tpl {
         i = nodesSnapshot.snapshotLength;
 
         args = {
-            names: [],
-            values: []
+            names: ['$model'],
+            values: [$model]
         }
 
         body.push(
             'let $this = this',
             'let _map = {}',
+            '$this.$model = $model',
             'for(let key in $this) {',
                 'let value = $this[key]',
                 'eval(`var ${key} = value`)',
@@ -101,8 +112,8 @@ class Tpl {
             let callAttr = _attr[el.nodeName]
             if(callAttr) {
                 body.push(
-                    `let f_${i}=${callAttr.toString()}`,
-                    `let f_call_${i} = function(value) { f_${i}(el_${i}, value, $this, expression) }`,
+                    `let f_${i}=${callAttr.init.toString()}`,
+                    `let f_call_${i} = function(value) { f_${i}(el_${i}, value, $this, $model, expression) }`,
                     `map("${el.nodeValue}", f_call_${i})`,
                     `f_call_${i}(${el.nodeValue})`
                 )
@@ -111,11 +122,11 @@ class Tpl {
                 args.values.push(el.ownerElement)
             }
 
-            let callExpression = _expressions[el.nodeName]
+            let callExpression = _expressionAttr[el.nodeName]
             if(callExpression) {
                 body.push(
-                    `let ex_${i}=${callExpression.toString()}`,
-                    `ex_${i}(el_${i}, "${el.nodeValue}", $this, expression)`
+                    `let ex_${i}=${callExpression.init.toString()}`,
+                    `ex_${i}(el_${i}, "${el.nodeValue}", $this, $model, expression)`
                 )
 
                 args.names.push(`el_${i}`)
@@ -125,9 +136,9 @@ class Tpl {
             let callEnumAttr = _enumAttr[el.nodeName]
             if(callEnumAttr) {
                 body.push(
-                    `let en_${i}=${callEnumAttr.callback.toString()}`,
+                    `let en_${i}=${callEnumAttr.init.toString()}`,
                     `let en_c_${i}=${callEnumAttr.change.toString()}`,
-                    `let c_${i} = en_${i}(el_${i}, ${el.nodeValue}, $this, expression)`,
+                    `let c_${i} = en_${i}(el_${i}, ${el.nodeValue}, $this, $model, expression)`,
                     `Array.observe(${el.nodeValue}, changes => { en_c_${i}(el_${i}, changes, c_${i}) })`
                 )
 
@@ -143,13 +154,13 @@ class Tpl {
         )
 
         let f = new Function('viewModel', 'values', 'body', [
-            'let f = new Function("'+args.names.join('","')+'",body.join("\\n"))',
+            'let f = new Function("'+args.names.join('","')+'", body)',
             //'try {',
                 'f.apply(viewModel, values)',
             //'} catch(e) { console.log(e.message) }',
         ].join('\n'))
 
-        f(viewModel, args.values, body)
+        f(viewModel, args.values, body.join('\n'))
     }
 
 
