@@ -67,20 +67,20 @@ class Tpl {
         _expressionAttr[`data-${name}`] = {init: init, change: change || init}
     }
 
-    static bindFrag(frag, $this, $model) {
+    static bindFrag(frag, $this, $scope) {
         let i = frag.children.length,
 			child, children = [];
 			
 		for(let i=0, length=frag.children.length; i<length; i++) {
 			child = frag.children[i]
-            Tpl.bind(child, $this, $model)
+            Tpl.bind(child, $this, $scope)
 			children.push(child)
 		} 	 
 		
 		return children;
     }
 
-    static bind(dom, viewModel, $model=viewModel) {
+    static bind(dom, viewModel, $scope) {
         let nodesSnapshot,
             i, el, args,
             body = [];
@@ -88,15 +88,19 @@ class Tpl {
         nodesSnapshot = document.evaluate('.//@*[starts-with(name(), "data-")]', dom, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         i = nodesSnapshot.snapshotLength;
 
+        if($scope === undefined) {
+            $scope = new Scope(viewModel)
+        }
+
         args = {
-            names: ['$model'],
-            values: [$model]
+            names: ['$scope'],
+            values: [$scope]
         }
 
         body.push(
             'let $this = this',
             'let _map = {}',
-            '$this.$model = $model',
+            '$this.$model = $scope.$model',
             'for(let key in $this) {',
                 'let value = $this[key]',
                 'eval(`var ${key} = value`)',
@@ -113,7 +117,7 @@ class Tpl {
             if(callAttr) {
                 body.push(
                     `let f_${i}=${callAttr.init.toString()}`,
-                    `let f_call_${i} = function(value) { f_${i}(el_${i}, value, $this, $model, expression) }`,
+                    `let f_call_${i} = function(value) { f_${i}(el_${i}, value, $this, $scope, expression) }`,
                     `map("${el.nodeValue}", f_call_${i})`,
                     `f_call_${i}(${el.nodeValue})`
                 )
@@ -126,7 +130,7 @@ class Tpl {
             if(callExpression) {
                 body.push(
                     `let ex_${i}=${callExpression.init.toString()}`,
-                    `ex_${i}(el_${i}, "${el.nodeValue}", $this, $model, expression)`
+                    `ex_${i}(el_${i}, "${el.nodeValue}", $this, $scope, expression)`
                 )
 
                 args.names.push(`el_${i}`)
@@ -138,7 +142,7 @@ class Tpl {
                 body.push(
                     `let en_${i}=${callEnumAttr.init.toString()}`,
                     `let en_c_${i}=${callEnumAttr.change.toString()}`,
-                    `let c_${i} = en_${i}(el_${i}, ${el.nodeValue}, $this, $model, expression)`,
+                    `let c_${i} = en_${i}(el_${i}, ${el.nodeValue}, $this, $scope, expression)`,
                     `Array.observe(${el.nodeValue}, changes => { en_c_${i}(el_${i}, changes, c_${i}) })`
                 )
 

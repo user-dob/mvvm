@@ -4,14 +4,14 @@ Tpl.addAttr('text', function(el, value) {
     el.textContent = value
 })
 
-Tpl.addEnumAttr('for', function(el, items, $this, $model) {
+Tpl.addEnumAttr('for', function(el, items, $this, $scope) {
     let frag = document.createDocumentFragment(),
 		child, children = [];
 
     for(let item of items) {
         let clone = document.importNode(el.content, true);
 
-        child = Tpl.bindFrag(clone, item, $model)
+        child = Tpl.bindFrag(clone, item, $scope)
 		children.push(child)
 
         frag.appendChild(clone)
@@ -52,12 +52,12 @@ Tpl.addEnumAttr('for', function(el, items, $this, $model) {
     })
 })
 
-Tpl.addAttr('if', function(el, value, $this, $model) {
+Tpl.addAttr('if', function(el, value, $this, $scope) {
     if(value) {
         let frag = document.createDocumentFragment();
         let clone = document.importNode(el.content, true);
 
-        Tpl.bindFrag(clone, $this, $model)
+        Tpl.bindFrag(clone, $this, $scope)
 
         frag.appendChild(clone)
 
@@ -65,7 +65,7 @@ Tpl.addAttr('if', function(el, value, $this, $model) {
     }
 })
 
-Tpl.addExpressionAttr('click', function(el, value, $this, $model, expression) {
+Tpl.addExpressionAttr('click', function(el, value, $this, $scope, expression) {
     el.addEventListener('click', () => {
         expression(value)
     })
